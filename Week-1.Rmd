@@ -1,11 +1,11 @@
 ---
-title: 'Replication #4'
+title: "Replication #4"
 author: "Jack Schroeder"
-date: "4/1/2019"
+date: "3/12/2019"
 output:
   html_document: default
-  pdf_document: default
 ---
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -59,7 +59,7 @@ for(i in 1:nrow(wtreat)){
 ```
 
 ## Abstract
-I replicate Enos' "What the Demolition of Public Housing Teaches Us about the Impact of Racial Threat on Political Behavior" using the author's replication data from the Harvard Dataverse (@Enos_rep_data). @Enos2015's figures replicate, but his table cannot be recreated since the necessary dataset is not included in the Dataverse.  
+I replicate Enos' "What the Demolition of Public Housing Teaches Us about the Impact of Racial Threat on Political Behavior" using the author's replication data from the Harvard Dataverse (@data). @article's figures replicate, but his table cannot be recreated since the necessary dataset is not included in the Dataverse.  
 
 ```{r master parameters, echo=FALSE}
 
@@ -513,3 +513,6 @@ Note:  Note: Differences in weighted mean Obama vote for precincts with $d ≤ 1
 
 ## References
 
+Enos, R. (2015). What the demolition of public hosuing teaches us about the imapct of racial threat on political behavior. *American Journal of Political Science 0*(0). pp. 1-20.
+
+Enos, R. (2015). Replication data for: What the demolition of public housing teaches us about the impact of racial threat on political behavior. *Harvard Dataverse*. Reached at dataverse.harvard.edu

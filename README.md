@@ -7,9 +7,8 @@ Please run with `unzip.R` before moving onto `Week-1.Rmd`.
 The repo contains the following:
 * `enos_files.zip`, which must be uncompressed before running any code
 * An R script, `unzip.R`, which unzips `enos_files.zip`
-* A folder, `Dataverse_Files`, that nests Enos' replication files (except for `data.turnout.csv`, which must be grabbed separately from the Dataverse due to its large size)
-* A folder, `figures`, that contains the generated replication figures
 * A `.gitignore` file  
 * `Week-1.Rmd`, which contains the first week's replication work  
+* `Week-1.html`, which contains the output of the first week's replication work
 * `bibliography.bib`, which holds references  
 * and `README.md`, which you are finished reading  
