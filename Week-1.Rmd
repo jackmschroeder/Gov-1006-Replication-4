@@ -8,70 +8,103 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-# I keep most of Enos' code here (since I'm not familiar enough with for loops and base R plotting). I'm curious to see if anyone was able to regenerate the plots using ggplot, but for now, I want to largely stick with what Enos does.
+# I'm still not entirely sure what the rm function is doing here
+# (I know it removes objects), but I'm keeping it until I know
+# for sure I don't need it.
 
 rm(list = ls())
-library(apsrtable)
 
-cat('creating output \n')
+# I also call in tidyverse in case I need it later on.
 
-###master graphic parameters for graphics 
+library(tidyverse)
+
+# I also load in the csv files Enos calls for. I make sure to turn
+# equals signs into <-. I keep the reads in as read.csv as to not
+# mess too much with the data.
+
+wtreat <- read.csv('enos_files/white.treat.effect.mean.boot.csv') 
+wtreat.lower <- read.csv('enos_files/white.treat.effect.conf.boot.lower.csv') 
+wtreat.upper <- read.csv('enos_files/white.treat.effect.conf.boot.upper.csv') 
+Nwtreat <- read.csv('enos_files/white.treat.N.csv')
+btreat <- read.csv('enos_files/black.treat.effect.mean.boot.csv') 
+btreat.lower <- read.csv('enos_files/black.treat.effect.conf.boot.lower.csv') 
+btreat.upper <- read.csv('enos_files/black.treat.effect.conf.boot.upper.csv') 
+Nbtreat <- read.csv('enos_files/black.treat.N.csv')
+distdat <- read.csv('enos_files/predicted.results.distance.vary.context.csv')
+areadat <- read.csv('enos_files/predicted.results.area.vary.context.csv')
+groups <- read.csv('enos_files/par.trends.csv')
+dists <- read.csv('enos_files/distance.vote.differences.csv')
+demos <- read.csv('enos_files/demolished.vote.differences.csv')
+
+# There are other csvs read in, but they are all in for loops.
+# Since Enos gives them similar names, I don't want to mess with
+# them yet.
+
+# I like Enos' for loop that turns the tibbles into matrices (which I
+# guess for him are easier to use). I'll keep it in for now.
+
+for(i in 1:nrow(wtreat)){
+	use.wtreat <- as.matrix(wtreat[i,])
+	use.wlower <- as.matrix(wtreat.lower[i,])
+	use.wupper <- as.matrix(wtreat.upper[i,])
+	use.Nwtreat <- as.matrix(Nwtreat[i,])
+	use.btreat <- as.matrix(btreat[i,])
+	use.blower <- as.matrix(btreat.lower[i,])
+	use.bupper <- as.matrix(btreat.upper[i,])
+	use.Nbtreat <- as.matrix(Nbtreat[i,])
+
+```
+
+## Abstract
+I replicate Enos' "What the Demolition of Public Housing Teaches Us about the Impact of Racial Threat on Political Behavior" using the author's replication data from the Harvard Dataverse (@Enos_rep_data). @Enos2015's figures replicate, but his table cannot be recreated since the necessary dataset is not included in the Dataverse.  
+
+```{r master parameters, echo=FALSE}
+
+# Enos sets certain parameters for the graphics that follow.
+# I keep them as they are.
+
+# These are setting limits on the axes and setting other values
+# for the x and y axes.
+
 ylims = c(-.35,.1)
 ylims.2 = c(-.45,.1)
 xlims = c(.5,11)
-dists = seq(from = 1000, to = 100, by = -100) ###DELETE THIS LATER
+dists = seq(from = 1000, to = 100, by = -100)
 xs = seq(1:length(dists))
 ys = seq(from = -.35, to = .1, by = .05)
 ys.lab = c('-0.35','-0.30', '-0.25','-0.20','-0.15','-0.10','-0.05','0.00','0.05','0.10')
 ys.2 = seq(from = -.45, to = .1, by = .05)
 ys.lab.2 = c('-0.45','-0.40','-0.35','-0.30', '-0.25','-0.20','-0.15','-0.10','-0.05','0.00','0.05','0.10')
 
+# This code helps out when text, lines, and points are added to
+# graphs.
+
 offsets = .15
 text.offsets = .025
 cex.axis = .9
 cex.N = .7
-top.text.adj = c(1.3,1.3) ##offsets on labels to reduce crowding
+top.text.adj = c(1.3,1.3)
 bottom.text.adj = c(-.15,-.85)
 point.size = 2
 line.offset = .0175
 
-###########################################
-###basic diff in diff graphs################
-###Figure 1 and Appendix Figure A1
-###################################
+# Enos also sets this code aside for when he has to use letters.
 
-##load data
-wtreat = read.csv('dataverse_files/white.treat.effect.mean.boot.csv') 
-wtreat.lower = read.csv('dataverse_files/white.treat.effect.conf.boot.lower.csv') 
-wtreat.upper = read.csv('dataverse_files/white.treat.effect.conf.boot.upper.csv') 
-Nwtreat = read.csv('dataverse_files/white.treat.N.csv')
-btreat = read.csv('dataverse_files/black.treat.effect.mean.boot.csv') 
-btreat.lower = read.csv('dataverse_files/black.treat.effect.conf.boot.lower.csv') 
-btreat.upper = read.csv('dataverse_files/black.treat.effect.conf.boot.upper.csv') 
-Nbtreat = read.csv('dataverse_files/black.treat.N.csv')
-##letters for marking graphs, one is not used
-use.letters = c('a','b','c','d','e','f','skip','g','h')
+use.letters <- c('a','b','c','d','e','f','skip','g','h')
 
-##cycle through each line of data, each of which are groups defined by diferent namepcts
-for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment function
-	use.wtreat = as.matrix(wtreat[i,])
-	use.wlower = as.matrix(wtreat.lower[i,])
-	use.wupper = as.matrix(wtreat.upper[i,])
-	use.Nwtreat = as.matrix(Nwtreat[i,])
-	
-	use.btreat = as.matrix(btreat[i,])
-	use.blower = as.matrix(btreat.lower[i,])
-	use.bupper = as.matrix(btreat.upper[i,])
-	use.Nbtreat = as.matrix(Nbtreat[i,])
-	
+```
 
-##name graphs
-	if(i == 7){
-		pdf('figures/Figure_1.pdf')
-		}
-	else{
-		pdf(paste('figures/Figure_A1',use.letters[i],'.pdf',sep=''))
-		}			
+## Replication
+
+### Figure 1. Treatment Effects
+
+```{r figure 1, echo=FALSE}
+
+# The general code to create the graph. He first sets parameters and 
+# then creates the actual graph using a matrix he created above.
+
+# He also relies on some of his general parameters (ylims, xlims).
+
 	par(las = 1)
 	par(mar = c(5.1, 4.1, .5, .5))
 	plot(xs, use.wtreat,
@@ -83,25 +116,31 @@ for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment funct
 		xaxt = 'n',
 		yaxt = 'n.csv')
 	abline(h = 0, lty = 2)
-
-	###draw lines first because I want them to be covered by points
-	####create spaces in lines using the offset (this allows the N to be displayed with the text() function)
-	##black lines are offset to the left, white lines to the right	
-	segments(x0= xs[1:2]+offsets, x1 = xs[1:2]+offsets, ##only do it for low N blacks because otherwise lines look funny
+	
+# His justification for having this code above the point creation is
+# that he wants the lines drawn and the points put on top. There has
+# to be a better way to do this (especially when he creates spacing 
+# specifically for the N values). He offsets the black and white voter
+# data so they do not appear on top of one another.
+	
+	segments(x0= xs[1:2]+offsets, x1 = xs[1:2]+offsets,
 		y0 = use.btreat[,1:2], y1 =	use.blower[,1:2])
 	segments(x0= xs[1:2]+offsets, x1 = xs[1:2]+offsets,
 		y0 = use.btreat[,1:2] + line.offset, 	y1 =	use.bupper[,1:2])
-  ##now the others
 	segments(x0= xs[3:10]+offsets, x1 = xs[3:10]+offsets,
 		y0 = use.blower[,3:10], 	y1 =	use.bupper[,3:10])
 		
-	segments(x0= xs-offsets, x1 = xs-offsets, ##bottomlines
+# Enos creates the top and bottom lines.
+	
+	segments(x0= xs-offsets, x1 = xs-offsets,
 		y0 = use.wtreat - line.offset, 	y1 =	use.wlower)
-	segments(x0= xs-offsets, x1 = xs-offsets, ##toplines
+	segments(x0= xs-offsets, x1 = xs-offsets,
 		y0 = use.wtreat, 	y1 =	use.wupper)
 
   
-  ##points and N descriptions
+# Enos uses this code to make the points on the graph and display the
+# proper N values. It's worth noting that this is a cumulative graph.
+
 	points(xs-offsets, use.wtreat,
 	       cex = point.size,
 	       pch = 21, 
@@ -110,7 +149,6 @@ for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment funct
 	text(xs-offsets,use.wtreat,
 	     paste('(',use.Nwtreat,')',sep = ''),
 	     cex = cex.N,
-	     #adj = top.text.adj
 	     pos = 1
 	    )
 	
@@ -120,9 +158,10 @@ for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment funct
 	text(xs+offsets,use.btreat,
 	     paste('(',use.Nbtreat,')',sep = ''),
 	     cex = cex.N,
-	     #adj = bottom.text.adj
 	     pos = 3
 	    )
+
+# Now Enos works on formatting the axes.
 	
 	axis(side = 1,
 		at = xs,
@@ -133,11 +172,15 @@ for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment funct
 		at = ys,
 		label = ys.lab,
 		cex.axis = cex.axis
-		)	
+		)
 
-	dev.off()
-	}
+```
 
+### Figure 2. Treatment Effects Using Matched White Voters Near Nondemolished Projects for Control Group
+
+### Figure 3. Treatment Effects Using Matched Black Control Group and Controlling for Homeownership
+
+```{r figure 2, echo=FALSE}
 
 ###########################################
 ###matched groups################
@@ -148,38 +191,38 @@ for(i in 1:nrow(wtreat)){ ##turning into matrices helps below with segment funct
 for(figure in c('white.basic.main','white.demo.main','white.demo.property','white.demo.localrace','blackmain','blackcensus')){
 	if(figure == 'white.basic.main'){
 		##this group is different than the rest because the second set is not actually a diff in diff, but calling it "diffs" for consistency
-		treat = read.csv('dataverse_files/white.match.basic.csv')
-		treat.2 = read.csv('dataverse_files/white.match.basic.property.csv')
+		treat <- read.csv('enos_files/white.match.basic.csv')
+		treat.2 <- read.csv('enos_files/white.match.basic.property.csv')
 		fig.nums = c('A3','A4') ##figure names
 		pchs = c(17,17) ##point types
 		}
 	if(figure == 'white.demo.main'){
-		treat = read.csv('dataverse_files/white.match.nondemolished.csv')
-		diffs = read.csv('dataverse_files/white.match.nondemolished.diffs.csv')
+		treat <- read.csv('enos_files/white.match.nondemolished.csv')
+		diffs <- read.csv('enos_files/white.match.nondemolished.diffs.csv')
 		fig.nums = c('2','A5')
 		pchs = c(17,22)
 		}
 	if(figure == 'white.demo.property'){
-		treat = read.csv('dataverse_files/white.match.nondemolished.property.csv')
-		diffs = read.csv('dataverse_files/white.match.nondemolished.diffs.property.csv')
+		treat <- read.csv('enos_files/white.match.nondemolished.property.csv')
+		diffs <- read.csv('enos_files/white.match.nondemolished.diffs.property.csv')
 		fig.nums = c('A6','A7')	
 		pchs = c(17,22)
 		}	
 	if(figure == 'white.demo.localrace'){
-		treat = read.csv('dataverse_files/white.match.nondemolished.localrace.csv')
-		diffs = read.csv('dataverse_files/white.match.nondemolished.diffs.localrace.csv')
+		treat <- read.csv('enos_files/white.match.nondemolished.localrace.csv')
+		diffs <- read.csv('enos_files/white.match.nondemolished.diffs.localrace.csv')
 		fig.nums = c('A8','A9')			
 		pchs = c(17,22)
 		}
 	if(figure == 'blackmain'){
-		treat = read.csv('dataverse_files/white.match.black.property.csv')
-		diffs = read.csv('dataverse_files/white.match.black.diffs.property.csv')
+		treat <- read.csv('enos_files/white.match.black.property.csv')
+		diffs <- read.csv('enos_files/white.match.black.diffs.property.csv')
 		fig.nums = c('3','A12')
 		pchs = c(17,21)			
 		}
 	if(figure == 'blackcensus'){
-		treat = read.csv('dataverse_files/white.match.black.csv')
-		diffs = read.csv('dataverse_files/white.match.black.diffs.csv')
+		treat <- read.csv('enos_files/white.match.black.csv')
+		diffs <- read.csv('enos_files/white.match.black.diffs.csv')
 		fig.nums = c('A10','A11')
 		pchs = c(17,21)	
 		}
@@ -264,7 +307,13 @@ for(figure in c('white.basic.main','white.demo.main','white.demo.property','whit
 			
 			dev.off()
 		}
-	}	
+}	
+
+```
+
+### Figure 4. Effects of Distance and Size of Projects
+
+```{r figure 4, echo=FALSE}
 
 
 ###########################################
@@ -272,7 +321,7 @@ for(figure in c('white.basic.main','white.demo.main','white.demo.property','whit
 ###Figure 4
 ###################################
 ##write out regression to latex table
-#load('dataverse_files/out.reg.predictions.rda') ##load saved model
+#load('enos_files/out.reg.predictions.rda') ##load saved model
 #out.model = apsrtable(out.reg.predictions,
 #	coef.names = c( 'Intercept','log(distance)','log(percent of local black population)','2000 turnout'),
 #	digits = 3
@@ -286,8 +335,7 @@ for(figure in c('white.basic.main','white.demo.main','white.demo.property','whit
 ###Figure 4
 ###################################
 
-distdat =  read.csv('dataverse_files/predicted.results.distance.vary.context.csv')
-areadat = read.csv('dataverse_files/predicted.results.area.vary.context.csv')
+
 
 ##new ylims for these graphs
 ylims.predict = c(.6,.75)
@@ -340,6 +388,13 @@ for(i in 1:2){
 		dev.off()
 	}
 
+```
+
+### Figure 5. Difference in Republican Vote for Matched Precincts
+
+### Figure 6. Difference in Obama Vote for Matched Precincts
+
+```{r figure 5, echo=FALSE}
 
 
 ###########################################
@@ -349,8 +404,7 @@ for(i in 1:2){
 pres.elections = c('dole_pct_ei','bush2000_pct_ei','bush2004_pct_ei','mccain_pct_ei')
 obama.elections = c('obama_sen_primary_pct_ei','keyes_pct_ei','obama_pres_primary_pct_ei')
 
-dists = read.csv('dataverse_files/distance.vote.differences.csv')
-demos = read.csv('dataverse_files/demolished.vote.differences.csv')
+
 
 
 graphs = c('5a','5b','6')
@@ -461,41 +515,6 @@ for(i in graphs){
 	}		
 				
 
-###########################################
-###parallel trends graph################
-###Appendix Figures A2
-###################################
-
-groups = read.csv('dataverse_files/par.trends.csv')
-
-
-###plot elections votes
-	pdf('figures/Figure_A2.pdf')
-		par(las = 1)
-		par(mar = c(5.1, 4.1, .5, .5))
-		plot(1,
-			.5,
-			ylim = c(.5,.9),
-			xlim = c(1,5),
-			type = 'n',
-			xaxt = 'n',
-			ylab = 'Percent Voter Turnout',
-			xlab = 'Year'
-			)
- 			text(seq(1:5),groups[,'white.control'], expression('W'['C']), cex = 1.5)
-			text(seq(1:5),groups[,'white.treatment'],expression('W'['T']), cex = 1.5)
-			text(seq(1:5),groups[,'black.control'], expression('B'['C']), cex = 1.5)
-			text(seq(1:5),groups[,'black.treatment'],expression('B'['T']), cex = 1.5)
-				
-			lines(seq(1:5),groups[,'white.control'], lty = 2)
-			lines(seq(1:5),groups[,'white.treatment'], lty = 2)
-			lines(seq(1:5),groups[,'black.control'], lty = 2)
-			lines(seq(1:5),groups[,'black.treatment'], lty = 2)
-
-		axis(side = 1, at = seq(1:5), labels = c('1996','1998','2000','2002','2004'))
-		axis(side = 2, at = seq(from = .5, to = .9, by = .05), labels = seq(from = .5, to = .9, by = .05))
-			
-		dev.off()
 
 ```
 
