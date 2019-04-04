@@ -8,12 +8,9 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 
-##create_tables_and_figures_only.r
-###create output for Enos 'What the Demolition of Public Housing Teaches Us About the Impact of Racial Threat on Political Behavior' 
-###RdE June 2014
+# I keep most of Enos' code here (since I'm not familiar enough with for loops and base R plotting). I'm curious to see if anyone was able to regenerate the plots using ggplot, but for now, I want to largely stick with what Enos does.
 
 rm(list = ls())
-
 library(apsrtable)
 
 cat('creating output \n')

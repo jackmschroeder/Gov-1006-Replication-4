@@ -7,6 +7,5 @@ The repo contains the following:
 * A folder, `figures`, that contains the generated replication figures
 * A `.gitignore` file  
 * `Week-1.Rmd`, which contains the first week's replication work  
-* `Week-1.pdf`, which contains the pdf output of the first week's replication work
 * `bibliography.bib`, which holds references  
 * and `README.md`, which you are finished reading  
