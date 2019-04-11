@@ -1,5 +1,5 @@
 ---
-title: "Replication #4"
+title: 'Replication #4'
 author: "Jack Schroeder"
 date: "3/12/2019"
 output:
@@ -19,6 +19,10 @@ rm(list = ls())
 # I also call in tidyverse in case I need it later on.
 
 library(tidyverse)
+library(simpleboot)
+library(boot)
+library(Zelig)
+library(stargazer)
 
 # I also load in the csv files Enos calls for. I make sure to turn
 # equals signs into <-. I keep the reads in as read.csv as to not
@@ -37,6 +41,10 @@ areadat <- read.csv('enos_files/predicted.results.area.vary.context.csv')
 groups <- read.csv('enos_files/par.trends.csv')
 dists <- read.csv('enos_files/distance.vote.differences.csv')
 demos <- read.csv('enos_files/demolished.vote.differences.csv')
+
+# This next csv is needed for the data work of the second week:
+
+data <- read.csv("enos_files/data.turnout.csv")
 
 # There are other csvs read in, but they are all in for loops.
 # Since Enos gives them similar names, I don't want to mess with
@@ -510,6 +518,175 @@ axis(side = 2,
 ```
 
 Note:  Note: Differences in weighted mean Obama vote for precincts with $d ≤ 1,000$ for de- molished projects and matched precincts with $d ≤ 1,000$ for nondemolished projects for white voters (white circles) and black voters (black circles).
+
+```{r turnout, echo=FALSE, cache=TRUE, warning=FALSE, error=FALSE, message=FALSE, results='hide'}
+
+# I then look at Enos' data creation code (for which Gabe's code was super helpful).
+# Our focus is on turnout.r, which reads in the csv file on turnout (which I assign
+# above as data).
+
+# Enos changes some variables into dates and factors.
+
+data$reg <- as.Date(data$reg)
+data$p <- as.factor(data$p)
+data$s <- as.factor(data$s)
+
+# Enos also sets distances as a maximum of 1000 (although he says 1k 
+# defines a neighborhood).
+
+dists <- seq(from = 100, to = 1000, by = 100)
+
+# He also stores a few percentages (one of which ends up being used
+# to determine whether a name is white enough for treatment [97.5%]).
+
+namepcts <- c(seq(from = .91, to = .96, by = .01),.975,.99,1)
+
+# He then creates matrices for "strong results".
+
+res.mat <- matrix(nrow=length(namepcts),ncol=length(dists))
+
+# Enos assigns these as part of the difference-in-difference analysis.
+
+white.treat.N <- res.mat
+white.treat.effect.mean.boot <- res.mat
+white.treat.effect.conf.boot.lower <- res.mat
+white.treat.effect.conf.boot.upper <- res.mat
+
+black.treat.N <- res.mat
+black.treat.effect.mean.boot <- res.mat
+black.treat.effect.conf.boot.lower <- res.mat
+black.treat.effect.conf.boot.upper <- res.mat
+
+# Enos cuts the registration date at this time since the registration
+# cutoff for IL is 27 days before the election.
+
+use.data <- data[data$reg <"2000-10-10" & is.na(data$reg) == F, ]
+
+# Loop through definitions of white and distances and estimate at each combination.
+
+for(j in 1:length(namepcts)){
+  
+# Define a treatment and control group for each name percent
+  
+	useW <- use.data[use.data$whitename >= namepcts[j],]
+   useB <- use.data[use.data$blackname >= namepcts[j],]
+  
+    for(h in 1:length(dists)){
+      	Wtreat <- useW[useW$demo.distance <= dists[h],]
+      	Btreat <- useB[useB$demo.distance <= dists[h],]
+      	Wcont <- useW[useW$demo.distance > dists[h],]
+      	Bcont <- useB[useB$demo.distance > dists[h],]     		
+      	white.treat.N[j,h] <- nrow(Wtreat)
+      	black.treat.N[j,h] <- nrow(Btreat)
+      	
+# Enos wants to bootstrap the standard errors after the t test of difference
+# of means for white and black subjects. I take it out to help knit faster.
+
+		if(white.treat.N[j,h] > 0){
+			white.boot <- two.boot((Wtreat$vote2004-Wtreat$vote2000),(Wcont$vote2004-Wcont$vote2000), mean, R = 2, na.rm=T)
+			white.treat.effect.mean.boot[j,h] <- white.boot$t0
+			white.boot.ci <- boot.ci(white.boot, type = 'basic')
+			white.treat.effect.conf.boot.lower[j,h] <- white.boot.ci$basic[4]
+			white.treat.effect.conf.boot.upper[j,h] <- white.boot.ci$basic[5]
+		      		}
+
+		if(black.treat.N[j,h] > 0){
+			black.boot <- two.boot((Btreat$vote2004-Btreat$vote2000),(Bcont$vote2004-Bcont$vote2000),mean, R = 2, na.rm=T)
+			black.treat.effect.mean.boot[j,h] <- black.boot$t0
+			black.boot.ci <- boot.ci(black.boot, type = 'basic')
+			black.treat.effect.conf.boot.lower[j,h] <- black.boot.ci$basic[4]
+			black.treat.effect.conf.boot.upper[j,h] <- black.boot.ci$basic[5]
+			 }
+		}
+	}
+
+```
+
+
+```{r simulation, echo=FALSE, cache=TRUE, warning=FALSE, error=FALSE, message=FALSE, results='hide'}
+
+# Enos creates the predicted effects for distance and context changes.
+
+# He subsets the data to eliminate NA values and find registered (white) voters.
+
+white.data <- data[as.Date(data$reg) < "2000-10-10" & is.na(data$reg) == F, ]
+
+# Enos only selects white subjects whose names have < 97.5% change of being white
+# (per his method described at length in another of his papers).
+
+white.data <- white.data[white.data$whitename >= .975,]
+
+# This is the data he uses, so he assigns it to usedata.
+
+usedata <- white.data
+
+# He increases the distances here to 2000 (as opposed to 2000 before).
+
+distances <- seq(from = 10, to = 2000, by = 10)
+
+# He also sets areas for estimation below.
+
+areas <- seq(from = 0, to = 1, length.out = length(distances))
+			      
+# Enos describes this as a storing bin.
+
+outmat.s <- matrix(ncol = 5, nrow = 0)
+outmat.d <- matrix(ncol = 5, nrow = 0)
+
+# He creates a model that will be used in table 1.
+
+model1 <- zelig(vote2004 ~ log(demo.distance) + log(context_black) + vote2000, data = usedata, model = 'ls', cite = F)
+
+# He then simulates this regression across different variable
+# values.
+
+for(i in seq(1:length(distances))){
+	print(i)
+	use.distance = distances[i]
+	out.d.1 = setx(model1,
+		vote2000 = 1,
+		demo.distance = use.distance)
+
+	out.d.sims = sim(model1,
+		x = out.d.1)
+	
+	use.area = areas[i]	
+	out.s.1 = setx(model1,
+		vote2000 = 1,
+		demo.distance = 100,
+		context_black = use.area)
+
+	out.s.sims = sim(model1,
+		x = out.s.1)
+
+	outstats.d = summary(out.d.sims)$stats[[1]]
+	outstats.s = summary(out.s.sims)$stats[[1]]
+	
+	outmat.d = rbind(outmat.d,outstats.d)
+	outmat.s = rbind(outmat.s,outstats.s)
+	}
+
+# He finally stores the results for future use. We don't
+# have to worry about these for now.
+
+predicted.results.distance.vary.context <- outmat.d
+predicted.results.area.vary.context <- outmat.s
+model1.predict <- model1
+
+```
+
+### Table 1. Regression of Turnout on Distance and Population Size
+
+```{r table1, echo=FALSE, results='asis'}
+
+# Redefine model1 as an lm model so it works nicely with Stargazer.
+
+model1 <- lm(vote2004 ~ log(demo.distance) + log(context_black) + vote2000, data = usedata)
+
+# I use Stargazer to create a nice-looking table of model1.
+
+stargazer(model1, header = FALSE, type = "html")
+```
 
 ## References
 
