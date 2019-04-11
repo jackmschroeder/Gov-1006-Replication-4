@@ -8,7 +8,7 @@ The repo contains the following:
 * `enos_files.zip`, which must be uncompressed before running any code
 * An R script, `unzip.R`, which unzips `enos_files.zip`
 * A `.gitignore` file  
-* `Week-1.Rmd`, which contains the first week's replication work  
-* `Week-1.html`, which contains the output of the first week's replication work
+* `Week-1.Rmd`, which contains the replication work (of both weeks!)
+* `Week-1.html`, which contains the replication output
 * `bibliography.bib`, which holds references  
 * and `README.md`, which you are finished reading  
